@@ -79,7 +79,7 @@ export class ECSGhostStack extends cdk.Stack {
 
         // Create Container
         const container = taskDefinition.addContainer('GhostBlogContainer', {
-          containerName: 'ghostblog-container',
+          //containerName: 'ghostblog-container',
           image: ecs.ContainerImage.fromDockerImageAsset(ghostBlogImage),
           //image: ecs.ContainerImage.fromTarball(path.join(__dirname, '../../res/docker/personalblog_ghost_container.tar')),
           environment: {
@@ -115,7 +115,7 @@ export class ECSGhostStack extends cdk.Stack {
 
       // Create the Service
       const service = new ecs.FargateService(this, 'GhostBlogService', {
-        serviceName: 'ghostblog-service',
+        //serviceName: 'ghostblog-service',
         cluster: ecsConstruct.cluster,
         taskDefinition: taskDefinition,
 
