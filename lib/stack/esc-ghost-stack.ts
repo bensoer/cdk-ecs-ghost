@@ -121,9 +121,9 @@ export class ECSGhostStack extends cdk.Stack {
 
         // deployment related settings
         desiredCount: 1,
-        circuitBreaker: {
+        /*circuitBreaker: {
             rollback: true
-        },
+        },*/
         deploymentController: {
             type: ecs.DeploymentControllerType.ECS
         },
