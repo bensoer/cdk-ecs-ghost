@@ -1,14 +1,21 @@
-# Welcome to your CDK TypeScript project
+# cdk-ecs-ghost
+Create a Ghost Blog with AWS ECS. Deployed using the AWS CDK. This project is a fully self contained deployment of Ghost (https://ghost.org/)
 
-This is a blank project for CDK development with TypeScript.
+# Prerequisites
+- Node v16+ installed
+- AWS CLI installed and configured with `[default]` profile pointing to your account
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+# Quick Setup
+1. Clone the repository
+2. `cd` into the project
+3. Open `conf/configuration.ts` and set your domain name
+3. Run `npm install`
+4. Run `npx cdk deploy`
+5. Wait for the CDK to complete deploying the project to your account
 
-## Useful commands
+By default cdk-ecs-ghost sets up all DNS with AWS Route53. You will need to login to your account and find your Nameservers
+and point whomever owns your domain to Route53
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk synth`       emits the synthesized CloudFormation template
+# Developer Notes
+- Project is still under heavy development. Nothing has been tested so far
+
