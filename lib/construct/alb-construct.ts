@@ -26,7 +26,6 @@ export class ALBConstruct extends Construct {
             vpc: props.vpc,
             internetFacing: true,
             securityGroup: props.vpcSecurityGroup,
-            
         })
       
         this.alb.setAttribute('routing.http.preserve_host_header.enabled', 'true') // Enable forwarding host header

@@ -87,7 +87,7 @@ export class ECSGhostStack extends cdk.Stack {
               "admin__url": `https://${route53Construct.adminDomainName}`,
               "url": `https://${route53Construct.domainName}`,
               "database__client": "mysql",
-              "database__connection__database": "ghost_personalblog",
+              "database__connection__database": "ghost_blog",
               "database__connection__ssl": "Amazon RDS",
               "adapters__storage__active": "s3",
               "GHOST_STORAGE_ADAPTER_S3_PATH_BUCKET": s3Construct.bucket.bucketName,
@@ -127,7 +127,7 @@ export class ECSGhostStack extends cdk.Stack {
         deploymentController: {
             type: ecs.DeploymentControllerType.ECS
         },
-        healthCheckGracePeriod: Duration.minutes(5),
+        healthCheckGracePeriod: Duration.minutes(15),
 
         //tagging settings
         enableECSManagedTags: true,
@@ -147,6 +147,11 @@ export class ECSGhostStack extends cdk.Stack {
         healthCheck : {
             enabled: true,
             port: '2368',
+            healthyHttpCodes: '200,301', // 301 is from the HTTP redirect to HTTPS by Ghost
+            interval: Duration.minutes(2),
+            healthyThresholdCount: 5,
+            unhealthyThresholdCount: 5,
+            timeout: Duration.seconds(45)
         },
         stickinessCookieDuration: Duration.days(1),
         stickinessCookieName: 'ghostblog-sticky-cookie'
