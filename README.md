@@ -2,8 +2,21 @@
 Create a Ghost Blog with AWS ECS. Deployed using the AWS CDK. This project is a fully self contained deployment of Ghost (https://ghost.org/)
 
 # Prerequisites
-- Node v16+ installed
-- AWS CLI installed and configured with `[default]` profile pointing to your account
+
+## AWS CLI & Account
+This is an AWS CDK Project meant for an AWS Account. For the easiest time deploying it is recommended to setup the AWS CLI on your local computer and configure your `[default]` profile to authenticate with your AWS Account in your desired region. See the following links for setting up:
+
+**AWS Account Setup:** 
+- https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/
+
+**AWS CLI Setup:** 
+- https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html
+- https://docs.aws.amazon.com/cdk/v2/guide/cli.html
+## Nodejs & AWS CDK
+The project is build using CDKv2. You will need it installed on your system. This can be done by installing the latest LTS of Nodejs (https://nodejs.org/en/download/) then by running the following command:
+```bash
+npm install -g aws-cdk
+```
 
 # Quick Setup
 1. Clone the repository
