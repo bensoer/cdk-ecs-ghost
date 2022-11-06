@@ -2,6 +2,7 @@ import { CfnOutput } from "aws-cdk-lib";
 import { GatewayVpcEndpointAwsService, InterfaceVpcEndpointAwsService, ISecurityGroup, IVpc, SecurityGroup, Vpc } from "aws-cdk-lib/aws-ec2";
 import { ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
+import { ConfigurationSingletonFactory } from "../conf/configuration-singleton-factory";
 
 
 export class VPCConstruct extends Construct {
@@ -12,59 +13,64 @@ export class VPCConstruct extends Construct {
     constructor(scope: Construct, id: string){
         super(scope, id)
 
+        const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
+        const prefix = configuration.prefixName
+
         this.vpc = new Vpc(this, 'VPC', {
-            cidr: '20.0.0.0/16',
-            natGateways: 1,
+            cidr: configuration.vpcSettings.vpcCIDRRange,
+            natGateways: configuration.vpcSettings.numberOfNatGateways,
 
             // auto dns resolution for endpoint stuff
             enableDnsHostnames: true,
             enableDnsSupport: true
         })
 
-        this.vpc.addGatewayEndpoint('S3Endpoint', {
-            service: GatewayVpcEndpointAwsService.S3
-        })
-
-        this.vpc.addInterfaceEndpoint('ECRDockerEndpoint', {
-            service: InterfaceVpcEndpointAwsService.ECR_DOCKER
-        })
-
-        this.vpc.addInterfaceEndpoint('ECREndpoint', {
-            service: InterfaceVpcEndpointAwsService.ECR
-        })
-
-        this.vpc.addInterfaceEndpoint('SecretsManagerEndpoint', {
-            service: InterfaceVpcEndpointAwsService.SECRETS_MANAGER
-        })
-
-        this.vpc.addInterfaceEndpoint('CloudWatchEndpoint', {
-            service: InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS
-        })
+        if(configuration.vpcSettings.enableServiceEndpoints){
+            this.vpc.addGatewayEndpoint('S3Endpoint', {
+                service: GatewayVpcEndpointAwsService.S3
+            })
+    
+            this.vpc.addInterfaceEndpoint('ECRDockerEndpoint', {
+                service: InterfaceVpcEndpointAwsService.ECR_DOCKER
+            })
+    
+            this.vpc.addInterfaceEndpoint('ECREndpoint', {
+                service: InterfaceVpcEndpointAwsService.ECR
+            })
+    
+            this.vpc.addInterfaceEndpoint('SecretsManagerEndpoint', {
+                service: InterfaceVpcEndpointAwsService.SECRETS_MANAGER
+            })
+    
+            this.vpc.addInterfaceEndpoint('CloudWatchEndpoint', {
+                service: InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS
+            })
+        }
 
         this.securityGroup = new SecurityGroup(this, 'VPCSecurityGroup', {
             vpc: this.vpc,
-            description: 'VPC Security Group',
+            description: (prefix + ' VPC Security Group').trim(),
             allowAllOutbound: true
         })
 
         // ECS VPC SG
         new StringParameter(this, 'VPCSecurityGroupID', {
-            parameterName: '/vpc/sg/id',
-            description: 'The Common VPC Security Group',
+            parameterName: prefix ? '/' + prefix + '/vpc/sg/id' : '/vpc/sg/id',
+            description: 'The VPC Security Group',
             stringValue: this.securityGroup.securityGroupId,
             tier: ParameterTier.STANDARD
         })
 
         // ECS VPC Parameters
         new StringParameter(this, 'VPCCIDR', {
-            parameterName: '/vpc/cidr',
+            parameterName: prefix ? '/' + prefix + '/vpc/cidr' : '/vpc/cidr',
             description: 'The VPC CIDR',
             stringValue: this.vpc.vpcCidrBlock,
             tier: ParameterTier.STANDARD
         })
 
         new StringParameter(this, 'VPCID', {
-            parameterName: '/vpc/id',
+            parameterName: prefix ? '/' + prefix + '/vpc/id' : '/vpc/id',
             description: 'The VPC ID',
             stringValue: this.vpc.vpcId
         })

@@ -3,6 +3,7 @@ import { Certificate, CertificateValidation } from "aws-cdk-lib/aws-certificatem
 import { HostedZone } from "aws-cdk-lib/aws-route53";
 import { ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
+import { ConfigurationSingletonFactory } from "../conf/configuration-singleton-factory";
 
 export interface ACMConstructProps {
     hostedZoneDomainMap: Map<HostedZone, Array<string>>
@@ -15,6 +16,9 @@ export class ACMConstruct extends Construct {
     constructor(scope: Construct, id:string, props: ACMConstructProps){
         super(scope, id)
 
+        const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
+        const prefix = configuration.prefixName
+
         for(const [hostedZone, domains] of props.hostedZoneDomainMap){
             for(const domain of domains){
                 const certificate = new Certificate(this, `${domain}`, {
@@ -23,7 +27,7 @@ export class ACMConstruct extends Construct {
                 })
     
                 new StringParameter(this, `SSM-ACM${domain}Certificate`, {
-                    parameterName: `/acm/${domain}/arn`,
+                    parameterName: prefix ? '/' + prefix + `/acm/${domain}/arn` : `/acm/${domain}/arn`,
                     description: `${domain} Certificate ARN`,
                     stringValue: certificate.certificateArn,
                     tier: ParameterTier.STANDARD

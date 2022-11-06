@@ -4,6 +4,7 @@ import { ARecord, CnameRecord, PublicHostedZone, RecordTarget } from "aws-cdk-li
 import { LoadBalancerTarget } from "aws-cdk-lib/aws-route53-targets";
 import { ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
+import { ConfigurationSingletonFactory } from "../conf/configuration-singleton-factory";
 
 export interface Route53ConstructProps {
     loadBalancer: ILoadBalancerV2,
@@ -19,6 +20,8 @@ export class Route53Construct extends Construct {
 
     constructor(scope: Construct, id: string, props: Route53ConstructProps){
         super(scope, id)
+
+        
 
         this.domainName = props.domainName
         this.adminDomainName = `admin.${this.domainName}`
@@ -58,8 +61,11 @@ export class Route53Construct extends Construct {
 
     private createSSMAndOutputOutOfZone(zone: PublicHostedZone){
 
+        const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
+        const prefix = configuration.prefixName
+
         new StringParameter(this, `route53-${zone.zoneName}-id`, {
-          parameterName: `/route53/${zone.zoneName}/id`,
+          parameterName: prefix ? '/' + prefix + `/route53/${zone.zoneName}/id` : `/route53/${zone.zoneName}/id`,
           description: `${zone.zoneName} ID`,
           stringValue: zone.hostedZoneId,
           tier: ParameterTier.STANDARD
@@ -71,7 +77,7 @@ export class Route53Construct extends Construct {
         })
     
         new StringParameter(this, `route53-${zone.zoneName}-arn`, {
-          parameterName: `/route53/${zone.zoneName}/arn`,
+          parameterName: prefix ? '/' + prefix + `/route53/${zone.zoneName}/arn` : `/route53/${zone.zoneName}/arn`,
           description: `${zone.zoneName} ARN`,
           stringValue: zone.hostedZoneArn,
           tier: ParameterTier.STANDARD

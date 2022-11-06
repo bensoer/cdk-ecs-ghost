@@ -11,31 +11,39 @@ import *  as ecs from 'aws-cdk-lib/aws-ecs';
 import { Route53Construct } from '../construct/route53-construct';
 import { ALBConstruct } from '../construct/alb-construct';
 import { Duration, Tags } from 'aws-cdk-lib';
-import { ApplicationListener, ApplicationProtocol, ApplicationProtocolVersion, ApplicationTargetGroup, ListenerCondition, TargetType } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { ApplicationListener, ApplicationProtocol, ApplicationProtocolVersion, ApplicationTargetGroup, ListenerAction, ListenerCondition, TargetType } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { ACMConstruct } from '../construct/acm-construct';
+import { ConfigurationSingletonFactory } from '../conf/configuration-singleton-factory';
+import { config } from 'process';
 
 export class ECSGhostStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
+        const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
+        const prefix = configuration.prefixName
+
         // Create the VPC where everything will be located in
-        const vpcConstruct = new VPCConstruct(this, 'GhostVPC')
+        const vpcConstruct = new VPCConstruct(this, prefix + 'GhostVPC')
 
         // Create the ECS Cluster
-        const ecsConstruct = new ECSConstruct(this, 'GhostECSCluster', {
-          vpc: vpcConstruct.vpc
+        const ecsConstruct = new ECSConstruct(this, prefix + 'GhostECSCluster', {
+          vpc: vpcConstruct.vpc,
+          clusterName: configuration.clusterName
         })
 
         // Render the Dockerfile into an ECR image
-        const ghostBlogImage = new DockerImageAsset(this, 'GhostBlogImage', {
+        const ghostBlogImage = new DockerImageAsset(this, prefix + 'GhostBlogImage', {
           directory: path.join(__dirname, '../../res/docker'),
         })
 
         // Create Asset Bucket And Permissions
-        const s3Construct = new S3Construct(this, 'GhostBlogAssets', {} )
+        const s3Construct = new S3Construct(this, prefix + 'GhostBlogAssets', {
+          bucketName: configuration.assetBucketName
+        })
 
         // Create Roles For ECS Cluster and Container
-        const iamConstruct = new IAMConstruct(this, 'GhostBlogIAM', {
+        const iamConstruct = new IAMConstruct(this, prefix + 'GhostBlogIAM', {
           assetBucket: s3Construct.bucket
         })
 
@@ -44,24 +52,24 @@ export class ECSGhostStack extends cdk.Stack {
         ghostBlogImage.repository.grantPull(taskExecutionRole)
 
         // Create the Database for Ghost to work in
-        const rdsConstrust = new RDSConstruct(this, 'GhostBlogDatabase' , {
+        const rdsConstrust = new RDSConstruct(this, prefix + 'GhostBlogDatabase' , {
           vpc: vpcConstruct.vpc
         })
 
         // Create the ALB
-        const albConstruct = new ALBConstruct(this, 'GhostBlogALB', {
+        const albConstruct = new ALBConstruct(this, prefix + 'GhostBlogALB', {
           vpc: vpcConstruct.vpc,
           vpcSecurityGroup: vpcConstruct.securityGroup
         })
 
         // Create the domains
-        const route53Construct = new Route53Construct(this, 'GhostBlogDNS', {
+        const route53Construct = new Route53Construct(this, prefix + 'GhostBlogDNS', {
           loadBalancer: albConstruct.alb,
-          domainName: ''
+          domainName: configuration.domainName
         })
 
         // Create the Certificates
-        const acmConstruct = new ACMConstruct(this, 'GhostBlogSSL', {
+        const acmConstruct = new ACMConstruct(this, prefix + 'GhostBlogSSL', {
           hostedZoneDomainMap: route53Construct.hostedZoneDomainMap
         })
 
@@ -71,23 +79,22 @@ export class ECSGhostStack extends cdk.Stack {
         // ============== Actual Container and Service Configuration ====================
 
         // Create Task Definition
-        const taskDefinition = new ecs.FargateTaskDefinition(this, 'GhostBlogTaskDefinition', {
+        const taskDefinition = new ecs.FargateTaskDefinition(this, prefix + 'GhostBlogTaskDefinition', {
           executionRole: iamConstruct.taskExecutionRole,
           taskRole: iamConstruct.containerExecutionRole,
           memoryLimitMiB: 1024
         })
 
         // Create Container
-        const container = taskDefinition.addContainer('GhostBlogContainer', {
-          //containerName: 'ghostblog-container',
+        const container = taskDefinition.addContainer(prefix + 'GhostBlogContainer', {
+          containerName: configuration.ghostBlogContainerName,
           image: ecs.ContainerImage.fromDockerImageAsset(ghostBlogImage),
-          //image: ecs.ContainerImage.fromTarball(path.join(__dirname, '../../res/docker/personalblog_ghost_container.tar')),
           environment: {
               NODE_ENV: 'production',
               "admin__url": `https://${route53Construct.adminDomainName}`,
               "url": `https://${route53Construct.domainName}`,
               "database__client": "mysql",
-              "database__connection__database": "ghost_blog",
+              "database__connection__database": configuration.databaseName,
               "database__connection__ssl": "Amazon RDS",
               "adapters__storage__active": "s3",
               "GHOST_STORAGE_ADAPTER_S3_PATH_BUCKET": s3Construct.bucket.bucketName,
@@ -106,7 +113,7 @@ export class ECSGhostStack extends cdk.Stack {
               "database__connection__user": ecs.Secret.fromSecretsManager(dbAdminPasswordSecret, 'username'),
               "database__connection__port": ecs.Secret.fromSecretsManager(dbAdminPasswordSecret, 'port')
           },
-          logging: ecs.LogDrivers.awsLogs({ streamPrefix: 'ghostblog-container'}),
+          logging: ecs.LogDrivers.awsLogs({ streamPrefix: configuration.loggingPrefix }),
           portMappings: [ {containerPort: 2368, protocol: ecs.Protocol.TCP }],
           memoryLimitMiB: 1024,
           memoryReservationMiB: 512
@@ -114,8 +121,8 @@ export class ECSGhostStack extends cdk.Stack {
       container.node.addDependency(ghostBlogImage)
 
       // Create the Service
-      const service = new ecs.FargateService(this, 'GhostBlogService', {
-        //serviceName: 'ghostblog-service',
+      const service = new ecs.FargateService(this, prefix + 'GhostBlogService', {
+        serviceName: configuration.ghostBlogServiceName,
         cluster: ecsConstruct.cluster,
         taskDefinition: taskDefinition,
 
@@ -127,7 +134,7 @@ export class ECSGhostStack extends cdk.Stack {
         deploymentController: {
             type: ecs.DeploymentControllerType.ECS
         },
-        healthCheckGracePeriod: Duration.minutes(15),
+        healthCheckGracePeriod: configuration.healthCheck.healthCheckGracePeriod,
 
         //tagging settings
         enableECSManagedTags: true,
@@ -135,7 +142,7 @@ export class ECSGhostStack extends cdk.Stack {
       })
 
       // Create target group
-      const targetGroup = new ApplicationTargetGroup(this, 'GhostBlogTargetGroup', {
+      const targetGroup = new ApplicationTargetGroup(this, prefix + 'GhostBlogTargetGroup', {
         targetType: TargetType.IP,
         vpc: vpcConstruct.vpc,
         port: 2368,
@@ -148,35 +155,34 @@ export class ECSGhostStack extends cdk.Stack {
             enabled: true,
             port: '2368',
             healthyHttpCodes: '200,301', // 301 is from the HTTP redirect to HTTPS by Ghost
-            interval: Duration.minutes(2),
-            healthyThresholdCount: 5,
-            unhealthyThresholdCount: 5,
-            timeout: Duration.seconds(45)
+            interval: configuration.healthCheck.interval,
+            healthyThresholdCount: configuration.healthCheck.healthyThresholdCount,
+            unhealthyThresholdCount: configuration.healthCheck.unhealthyThresholdCount,
+            timeout: configuration.healthCheck.timeout
         },
         stickinessCookieDuration: Duration.days(1),
-        stickinessCookieName: 'ghostblog-sticky-cookie'
+        stickinessCookieName: configuration.stickyCookieName
       })
 
-      albConstruct.defaultSecureListener.addTargetGroups('GhostBlogRouteMapping', {
-        targetGroups: [
-            targetGroup
-        ],
+      albConstruct.defaultSecureListener.addAction(prefix + 'GhostBlogRouteMapping', {
+        action: ListenerAction.forward([targetGroup]),
         conditions: [
-            ListenerCondition.hostHeaders([route53Construct.domainName])
+          ListenerCondition.hostHeaders([route53Construct.domainName])
         ],
-        priority: 5,
+        priority: 500
       })
 
-      albConstruct.defaultSecureListener.addTargetGroups('GhostBlogAdminRouteMapping', {
-          targetGroups: [
-              targetGroup
-          ],
-          conditions: [
-              ListenerCondition.hostHeaders([route53Construct.adminDomainName])
-          ],
-          priority: 6
+      albConstruct.defaultSecureListener.addAction(prefix + 'GhostBlogAdminRouteMapping', {
+        action: ListenerAction.forward([targetGroup]),
+        conditions: [
+          ListenerCondition.hostHeaders([route53Construct.adminDomainName])
+        ],
+        priority: 600
       })
 
-    Tags.of(this).add('Project', 'ghostblog')
+    
+    Tags.of(this).add('Project', 'ecs-ghost-blog')
+    Tags.of(this).add('Prefix', prefix)
+    Tags.of(this).add('Domain', configuration.domainName)
   }
 }

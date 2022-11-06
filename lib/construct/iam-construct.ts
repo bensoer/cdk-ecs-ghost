@@ -3,6 +3,7 @@ import { IRole, ManagedPolicy, PolicyStatement, Role, ServicePrincipal } from "a
 import { IBucket } from "aws-cdk-lib/aws-s3";
 import { ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
+import { ConfigurationSingletonFactory } from "../conf/configuration-singleton-factory";
 
 export interface IAMConstructProps {
     assetBucket: IBucket
@@ -16,11 +17,14 @@ export class IAMConstruct extends Construct {
     constructor(scope: Construct, id:string, props: IAMConstructProps){
         super(scope, id)
 
+        const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
+        const prefix = configuration.prefixName
+
         // ECS Execution Role ================================================
 
         this.taskExecutionRole = new Role(this, 'ECSTaskExecutionRole', {
-            roleName: 'ECSTaskExecutionRole',
-            description: 'ECS Task Execution Role',
+            roleName: prefix + 'ECSTaskExecutionRole',
+            description: (prefix + ' ECS Task Execution Role').trim(),
             assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com'),
             managedPolicies: [
                 ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'),
@@ -29,7 +33,7 @@ export class IAMConstruct extends Construct {
         })
     
         new StringParameter(this, `SSMECSTaskExecuctionRole`, {
-            parameterName: `/iam/ecstaskexecutionrole/arn`,
+            parameterName: prefix ? '/' + prefix + `/iam/ecstaskexecutionrole/arn` : `/iam/ecstaskexecutionrole/arn`,
             description: `ECSTaskExecutionRole ARN`,
             stringValue: this.taskExecutionRole.roleArn,
             tier: ParameterTier.STANDARD
@@ -43,8 +47,8 @@ export class IAMConstruct extends Construct {
         // Container Service Role ==============================================
 
         this.containerExecutionRole = new Role(this, 'ContainerServiceRole', {
-            roleName: 'ContainerServiceRole',
-            description: 'Service Role Assumed By Container To Access AWS',
+            roleName: prefix + 'ContainerServiceRole',
+            description: (prefix + ' Service Role Assumed By Container To Access AWS').trim(),
             assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com')
         })
     
@@ -64,7 +68,7 @@ export class IAMConstruct extends Construct {
         }))
 
         new StringParameter(this, `SSMECSContainerExecuctionRole`, {
-            parameterName: `/iam/ecscontainerexecutionrole/arn`,
+            parameterName: prefix ? '/' + prefix + `/iam/ecscontainerexecutionrole/arn` : `/iam/ecscontainerexecutionrole/arn`,
             description: `ECSContainerExecutionRole ARN`,
             stringValue: this.containerExecutionRole.roleArn,
             tier: ParameterTier.STANDARD

@@ -3,6 +3,7 @@ import { IVpc } from "aws-cdk-lib/aws-ec2";
 import { Cluster } from "aws-cdk-lib/aws-ecs";
 import { ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
+import { ConfigurationSingletonFactory } from "../conf/configuration-singleton-factory";
 
 export interface ECSConstructProps {
     vpc: IVpc,
@@ -16,6 +17,9 @@ export class ECSConstruct extends Construct {
     constructor(scope: Construct, id: string, props: ECSConstructProps){
         super(scope, id)
 
+        const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
+        const prefix = configuration.prefixName
+
         this.cluster = new Cluster(this, 'Cluster', {
             clusterName: props.clusterName,
             vpc: props.vpc,
@@ -23,13 +27,13 @@ export class ECSConstruct extends Construct {
 
         // ECS Cluster Parameters
         new StringParameter(this, 'ECSClusterARN', {
-            parameterName: '/ecs/cluster/arn',
+            parameterName: prefix ? '/' + prefix + '/ecs/cluster/arn' : '/ecs/cluster/arn',
             description: 'ECS Cluster ARN',
             stringValue: this.cluster.clusterArn,
             tier: ParameterTier.STANDARD
         })
         new StringParameter(this, 'ECSClusterName', {
-            parameterName: '/ecs/cluster/name',
+            parameterName: prefix ? '/' + prefix + '/ecs/cluster/name' : '/ecs/cluster/name',
             description: 'ECS Cluster Name',
             stringValue: this.cluster.clusterName,
             tier: ParameterTier.STANDARD

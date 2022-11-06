@@ -4,6 +4,7 @@ import { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
 import { ApplicationListener, ApplicationLoadBalancer, ApplicationProtocol, ApplicationProtocolVersion, ApplicationTargetGroup, IApplicationLoadBalancer, SslPolicy, TargetType } from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import { ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
+import { ConfigurationSingletonFactory } from "../conf/configuration-singleton-factory";
 
 export interface ALBConstructProps {
     vpc: IVpc,
@@ -20,6 +21,9 @@ export class ALBConstruct extends Construct {
 
     constructor(scope: Construct, id:string, props: ALBConstructProps){
         super(scope, id)
+
+        const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
+        const prefix = configuration.prefixName
 
         this.alb = new ApplicationLoadBalancer(this, 'ApplicationLoadBalancer', {
             loadBalancerName: props.loadBalancerName,
@@ -58,25 +62,25 @@ export class ALBConstruct extends Construct {
 
         // ECS Load Balancer Parameters
         new StringParameter(this, 'ApplicationLoadBalancerARN', {
-            parameterName: '/alb/arn',
+            parameterName: prefix ? '/' + prefix + '/alb/arn' : '/alb/arn',
             description: 'ApplicationLoadBalancer ARN',
             stringValue: this.alb.loadBalancerArn,
             tier: ParameterTier.STANDARD
         })
         new StringParameter(this, 'DefaultSecureApplicationListenerARN', {
-            parameterName: '/ecs/alb/ssllistener/arn',
+            parameterName: prefix ? '/' + prefix + '/ecs/alb/ssllistener/arn' : '/ecs/alb/ssllistener/arn',
             description: 'ApplicationLoadBalancer Default SSL Listener ARN',
             stringValue: this.defaultSecureListener.listenerArn,
             tier: ParameterTier.STANDARD
         })
         new StringParameter(this, 'ApplicationLoadBalancerDNSName', {
-            parameterName: '/ecs/alb/ssllistener/dnsName',
+            parameterName: prefix ? '/' + prefix + '/ecs/alb/ssllistener/dnsName' : '/' + prefix + '/ecs/alb/ssllistener/dnsName',
             description: 'ApplicationLoadBalancer DNS Name',
             stringValue: this.alb.loadBalancerDnsName,
             tier: ParameterTier.STANDARD
         })
         new StringParameter(this, 'ApplicationLoadBalancerCanonicalHostedZoneId', {
-            parameterName: '/ecs/alb/ssllistener/canonicalHostedZoneId',
+            parameterName: prefix ? '/' + prefix + '/ecs/alb/ssllistener/canonicalHostedZoneId' : '/ecs/alb/ssllistener/canonicalHostedZoneId',
             description: 'ApplicationLoaderBalancer Canonical Hosted Zone ID',
             stringValue: this.alb.loadBalancerCanonicalHostedZoneId,
             tier: ParameterTier.STANDARD

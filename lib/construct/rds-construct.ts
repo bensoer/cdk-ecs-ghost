@@ -3,6 +3,7 @@ import { InstanceClass, InstanceSize, InstanceType, IVpc, Peer, Port, SecurityGr
 import { Credentials, DatabaseInstance, DatabaseInstanceEngine } from "aws-cdk-lib/aws-rds";
 import { ParameterTier, StringListParameter, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
+import { ConfigurationSingletonFactory } from "../conf/configuration-singleton-factory";
 
 export interface RDSConstructProps {
     vpc: IVpc,
@@ -16,10 +17,13 @@ export class RDSConstruct extends Construct {
 
     constructor(scope: Construct, id: string, props: RDSConstructProps){
         super(scope, id);
+
+        const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
+        const prefix = configuration.prefixName
         
         this.securityGroup = new SecurityGroup(this, 'MySQLSecurityGroup', {
             securityGroupName: props.securityGroupName,
-            description: 'Security Group for access to MySQL Database',
+            description: (prefix + ' Security Group for access to MySQL Database').trim(),
             vpc: props.vpc,
             allowAllOutbound: true,
         })
@@ -42,7 +46,7 @@ export class RDSConstruct extends Construct {
         const address = this.databaseInstance.instanceEndpoint.socketAddress
 
         new StringParameter(this, `MySQLInstanceEndpoint`, {
-            parameterName: `/rds/mysql/endpoint`,
+            parameterName: prefix ? '/' + prefix + `/rds/mysql/endpoint` : `/rds/mysql/endpoint`,
             description: `Endpoint To Connect To MYSQL with`,
             stringValue: address,
             tier: ParameterTier.STANDARD
