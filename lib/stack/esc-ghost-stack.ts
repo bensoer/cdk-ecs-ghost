@@ -86,7 +86,7 @@ export class ECSGhostStack extends cdk.Stack {
 
         // Create Container
         const container = taskDefinition.addContainer(prefix + 'GhostBlogContainer', {
-          containerName: configuration.ghostBlogContainerName,
+          containerName: configuration.ecsSettings.ghostBlogContainerName,
           image: ecs.ContainerImage.fromDockerImageAsset(ghostBlogImage),
           environment: {
               NODE_ENV: 'production',
@@ -115,7 +115,7 @@ export class ECSGhostStack extends cdk.Stack {
 
 
           },
-          logging: ecs.LogDrivers.awsLogs({ streamPrefix: configuration.loggingPrefix }),
+          logging: ecs.LogDrivers.awsLogs({ streamPrefix: configuration.ecsSettings.loggingPrefix }),
           portMappings: [ {containerPort: 2368, protocol: ecs.Protocol.TCP }],
           memoryLimitMiB: 1024,
           memoryReservationMiB: 512
@@ -124,7 +124,7 @@ export class ECSGhostStack extends cdk.Stack {
 
       // Create the Service
       const service = new ecs.FargateService(this, prefix + 'GhostBlogService', {
-        serviceName: configuration.ghostBlogServiceName,
+        serviceName: configuration.ecsSettings.ghostBlogServiceName,
         cluster: ecsConstruct.cluster,
         taskDefinition: taskDefinition,
 
@@ -163,7 +163,7 @@ export class ECSGhostStack extends cdk.Stack {
             timeout: configuration.healthCheck.timeout
         },
         stickinessCookieDuration: Duration.days(1),
-        stickinessCookieName: configuration.stickyCookieName
+        stickinessCookieName: configuration.albSettings.stickyCookieName
       })
 
       albConstruct.defaultSecureListener.addAction(prefix + 'GhostBlogRouteMapping', {

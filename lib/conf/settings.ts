@@ -49,6 +49,11 @@ export interface ALBSettings {
     importSettings?: ImportALBSettings
 
     sslPolicy: SslPolicy
+
+    /**
+     * Name of the sticky cookie used between the ALB and ECS
+     */
+     stickyCookieName: string
 }
 
 /**
@@ -79,6 +84,23 @@ export interface ECSSettings {
      * Provide a name for the cluster. Default will have Cloudformation generate the name
      */
     clusterName?: string
+
+    /**
+     * Logging group output from ECS
+     */
+     loggingPrefix: string
+
+     /**
+      * Explicite name for the Ghost Blog ECS Container. Default will use
+      * the Cloudformation generated name
+      */
+     ghostBlogContainerName?:string
+ 
+     /**
+      * Explicite name for the Ghost Blog ECS Service. Default will use
+      * the Cloudformation generated name
+      */
+     ghostBlogServiceName?:string
 
     /**
      * Provide your own ECS cluster to import. All other settings in ECSSettings
@@ -135,21 +157,6 @@ export interface Settings {
     prefixName:string
 
     /**
-     * Logging group output from ECS
-     */
-    loggingPrefix: string
-
-    /**
-     * Explicite name for the Ghost Blog ECS Container
-     */
-    ghostBlogContainerName?:string
-
-    /**
-     * Explicite name for the Ghost Blog ECS Service
-     */
-    ghostBlogServiceName?:string
-
-    /**
      * The domain name to resolve to your ghost blog
      */
     domainName: string
@@ -159,10 +166,7 @@ export interface Settings {
      */
     databaseName: string
 
-    /**
-     * Name of the sticky cookie used between the ALB and ECS
-     */
-    stickyCookieName: string
+    
 
     /**
      * Settings for ECS Container health checking

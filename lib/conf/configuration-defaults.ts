@@ -9,9 +9,7 @@ export class ConfigurationDefaults extends AbstractConfiguration {
         domainName: 'localhost',
         databaseName: 'ghost_blog',
         prefixName: '',
-        stickyCookieName: 'ghostblog-sticky-cookie',
-        loggingPrefix: 'ghostblog-container',
-
+        
         healthCheck: {
             interval: Duration.minutes(2),
             healthyThresholdCount: 5,
@@ -27,12 +25,13 @@ export class ConfigurationDefaults extends AbstractConfiguration {
         },
 
         ecsSettings: {
+            loggingPrefix: 'ghostblog-container',
 
         },
 
         albSettings: {
-            sslPolicy: SslPolicy.RECOMMENDED
-
+            sslPolicy: SslPolicy.RECOMMENDED,
+            stickyCookieName: 'ghostblog-sticky-cookie',
         }
         
     }
