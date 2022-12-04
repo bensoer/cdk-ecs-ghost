@@ -1,7 +1,7 @@
 import { CfnOutput } from "aws-cdk-lib";
 import { InstanceClass, InstanceSize, InstanceType, IVpc, Peer, Port, SecurityGroup } from "aws-cdk-lib/aws-ec2";
 import { Credentials, DatabaseInstance, DatabaseInstanceEngine } from "aws-cdk-lib/aws-rds";
-import { ParameterTier, StringListParameter, StringParameter } from "aws-cdk-lib/aws-ssm";
+import { ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
 import { ConfigurationSingletonFactory } from "../conf/configuration-singleton-factory";
 

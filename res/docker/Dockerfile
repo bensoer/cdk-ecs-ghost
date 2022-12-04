@@ -17,7 +17,7 @@ RUN sudo apt update && sudo apt upgrade -y && sudo apt install -y nodejs
 
 #Configure Ghost
 ENV NODE_ENV production
-ENV GHOST_VERSION 4.48.6
+ENV GHOST_VERSION 4.48.9
 ENV GHOST_CLI_VERSION latest
 ENV GHOST_DIR /var/lib/ghost
 ENV GHOST_CONTENT_DIR /var/lib/ghost/content
@@ -26,9 +26,6 @@ ENV GHOST_CONTENT_DIR /var/lib/ghost/content
 RUN sudo mkdir -p "${GHOST_DIR}" && \
     sudo chown general:general "${GHOST_DIR}" && \
     sudo chmod 775 "${GHOST_DIR}" && \
-#    sudo mkdir -p "${GHOST_CONTENT_DIR}" && \
-#    sudo chown general:general "${GHOST_CONTENT_DIR}" && \
-#    sudo chmod 777 "${GHOST_CONTENT_DIR}" && \
     sudo npm install -g "ghost-cli@${GHOST_CLI_VERSION}"
 
 #Install Ghost

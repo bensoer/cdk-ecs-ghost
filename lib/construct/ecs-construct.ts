@@ -1,6 +1,6 @@
 import { CfnOutput } from "aws-cdk-lib";
-import { IVpc } from "aws-cdk-lib/aws-ec2";
-import { Cluster } from "aws-cdk-lib/aws-ecs";
+import { IVpc, SecurityGroup, Vpc } from "aws-cdk-lib/aws-ec2";
+import { Cluster, ICluster } from "aws-cdk-lib/aws-ecs";
 import { ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
 import { ConfigurationSingletonFactory } from "../conf/configuration-singleton-factory";
@@ -12,7 +12,7 @@ export interface ECSConstructProps {
 
 export class ECSConstruct extends Construct {
 
-    public readonly cluster: Cluster
+    public readonly cluster: ICluster
 
     constructor(scope: Construct, id: string, props: ECSConstructProps){
         super(scope, id)
@@ -20,10 +20,21 @@ export class ECSConstruct extends Construct {
         const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
         const prefix = configuration.prefixName
 
-        this.cluster = new Cluster(this, 'Cluster', {
-            clusterName: props.clusterName,
-            vpc: props.vpc,
-        })
+        if(configuration.ecsSettings.importSettings){
+            this.cluster = Cluster.fromClusterAttributes(this, 'Cluster-Lookup', {
+                clusterName: configuration.ecsSettings.importSettings.clusterName,
+                clusterArn: configuration.ecsSettings.importSettings.clusterArn,
+                vpc: Vpc.fromLookup(this, 'VPC-Lookup', {
+                    vpcId: configuration.ecsSettings.importSettings.vpcId
+                }),
+                securityGroups: configuration.ecsSettings.importSettings.securityGroupIds.map((item) => SecurityGroup.fromLookupById(this, `SecurityGroup-Lookup-${item}`, item))
+            })
+        }else{
+            this.cluster = new Cluster(this, 'Cluster', {
+                clusterName: props.clusterName,
+                vpc: props.vpc,
+            })
+        }
 
         // ECS Cluster Parameters
         new StringParameter(this, 'ECSClusterARN', {

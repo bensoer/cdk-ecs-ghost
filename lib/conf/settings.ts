@@ -1,4 +1,5 @@
 import { Duration } from "aws-cdk-lib"
+import { SslPolicy } from "aws-cdk-lib/aws-elasticloadbalancingv2"
 
 export interface HealthCheckSettings {
     /**
@@ -27,7 +28,86 @@ export interface HealthCheckSettings {
     healthCheckGracePeriod: Duration
 }
 
+/**
+ * Required settings to import your own ALB
+ */
+export interface ImportALBSettings {
+    /**
+     * ARN of the ALB
+     */
+    arn: string
+}
+
+/**
+ * 
+ */
+export interface ALBSettings {
+    /**
+     * Provide your own ALB to be imported. All other ALB related
+     * settings will be ignored if this value is provided
+     */
+    importSettings?: ImportALBSettings
+
+    sslPolicy: SslPolicy
+}
+
+/**
+ * Required settings to import your own ECS Cluster
+ */
+export interface ImportECSSettings {
+    /**
+     * Name of the ECS Cluster
+     */
+    clusterName: string
+    /**
+     * The ARN of the ECS Cluster
+     */
+    clusterArn: string
+    /**
+     * The vpcID of the VPC the ECS Cluster is hosted in
+     */
+    vpcId: string,
+    /**
+     * A list of securityGroupIDs of the SecurityGroups in the VPC the ECS Cluster is hosted in
+     */
+    securityGroupIds: Array<string>
+}
+
+export interface ECSSettings {
+
+    /**
+     * Provide a name for the cluster. Default will have Cloudformation generate the name
+     */
+    clusterName?: string
+
+    /**
+     * Provide your own ECS cluster to import. All other settings in ECSSettings
+     * will be ignore if this value is provided
+     */
+    importSettings? : ImportECSSettings
+}
+
+/**
+ * Required settings to import your own VPC
+ */
+export interface ImportVPCSettings {
+    vpcId: string
+    securityGroupId: string
+}
+
 export interface VPCSettings {
+
+    /**
+     * Provide your own VPC to import. All other settings in VPCSettings
+     * will be ignored if this value is provided.
+     * 
+     * Note: cdk-ecs-ghost will not modify an imported VPC. By default, VPC Endpoints
+     * are configured with the generated cdk-ecs-ghost VPC. If these are not included
+     * in your own VPC, this may incur more cost
+     */
+    importSettings? : ImportVPCSettings
+    
+
     /**
      * Provide a custom CIDR range for the VPC the ECS Cluster and all components will
      * be hosted within
@@ -90,9 +170,14 @@ export interface Settings {
     healthCheck: HealthCheckSettings
 
     /**
-     * ECS Cluster Name
+     * ECS Cluster Settings
      */
-    clusterName? : string
+    ecsSettings: ECSSettings
+
+    /**
+     * ALB Settings
+     */
+    albSettings: ALBSettings
 
     /**
      * Name of the S3 Asset bucket that stores Ghost Blog Images.

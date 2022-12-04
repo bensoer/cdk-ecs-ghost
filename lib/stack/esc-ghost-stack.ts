@@ -11,10 +11,9 @@ import *  as ecs from 'aws-cdk-lib/aws-ecs';
 import { Route53Construct } from '../construct/route53-construct';
 import { ALBConstruct } from '../construct/alb-construct';
 import { Duration, Tags } from 'aws-cdk-lib';
-import { ApplicationListener, ApplicationProtocol, ApplicationProtocolVersion, ApplicationTargetGroup, ListenerAction, ListenerCondition, TargetType } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import { ApplicationProtocol, ApplicationProtocolVersion, ApplicationTargetGroup, ListenerAction, ListenerCondition, TargetType } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { ACMConstruct } from '../construct/acm-construct';
 import { ConfigurationSingletonFactory } from '../conf/configuration-singleton-factory';
-import { config } from 'process';
 
 export class ECSGhostStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -29,7 +28,7 @@ export class ECSGhostStack extends cdk.Stack {
         // Create the ECS Cluster
         const ecsConstruct = new ECSConstruct(this, prefix + 'GhostECSCluster', {
           vpc: vpcConstruct.vpc,
-          clusterName: configuration.clusterName
+          clusterName: configuration.ecsSettings.clusterName
         })
 
         // Render the Dockerfile into an ECR image
@@ -97,6 +96,7 @@ export class ECSGhostStack extends cdk.Stack {
               "database__connection__database": configuration.databaseName,
               "database__connection__ssl": "Amazon RDS",
               "adapters__storage__active": "s3",
+              "adapters__storage__region": "us-east-1",
               "GHOST_STORAGE_ADAPTER_S3_PATH_BUCKET": s3Construct.bucket.bucketName,
               "GHOST_STORAGE_ADAPTER_S3_PATH_PREFIX": "content/images",
               //"mail__transport": "SMTP",
@@ -111,7 +111,9 @@ export class ECSGhostStack extends cdk.Stack {
               "database__connection__password": ecs.Secret.fromSecretsManager(dbAdminPasswordSecret, 'password'),
               "database__connection__host": ecs.Secret.fromSecretsManager(dbAdminPasswordSecret, 'host'),
               "database__connection__user": ecs.Secret.fromSecretsManager(dbAdminPasswordSecret, 'username'),
-              "database__connection__port": ecs.Secret.fromSecretsManager(dbAdminPasswordSecret, 'port')
+              "database__connection__port": ecs.Secret.fromSecretsManager(dbAdminPasswordSecret, 'port'),
+
+
           },
           logging: ecs.LogDrivers.awsLogs({ streamPrefix: configuration.loggingPrefix }),
           portMappings: [ {containerPort: 2368, protocol: ecs.Protocol.TCP }],

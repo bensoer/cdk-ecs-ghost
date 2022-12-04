@@ -2,6 +2,7 @@ import { CfnOutput } from "aws-cdk-lib";
 import { GatewayVpcEndpointAwsService, InterfaceVpcEndpointAwsService, ISecurityGroup, IVpc, SecurityGroup, Vpc } from "aws-cdk-lib/aws-ec2";
 import { ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
+import { config } from "process";
 import { ConfigurationSingletonFactory } from "../conf/configuration-singleton-factory";
 
 
@@ -16,42 +17,51 @@ export class VPCConstruct extends Construct {
         const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
         const prefix = configuration.prefixName
 
-        this.vpc = new Vpc(this, 'VPC', {
-            cidr: configuration.vpcSettings.vpcCIDRRange,
-            natGateways: configuration.vpcSettings.numberOfNatGateways,
+        // Check whether importSettings were provided or if we are making our own
+        if(configuration.vpcSettings.importSettings){
+            this.vpc = Vpc.fromLookup(this, 'VPC-Lookup', {
+                vpcId: configuration.vpcSettings.importSettings.vpcId
+            })
+            this.securityGroup = SecurityGroup.fromLookupById(this, 'VPCSecurityGroup-Lookup', configuration.vpcSettings.importSettings.securityGroupId)
+        }else{
+            this.vpc = new Vpc(this, 'VPC', {
+                cidr: configuration.vpcSettings.vpcCIDRRange,
+                natGateways: configuration.vpcSettings.numberOfNatGateways,
+    
+                // auto dns resolution for endpoint stuff
+                enableDnsHostnames: true,
+                enableDnsSupport: true
+            })
+    
+            if(configuration.vpcSettings.enableServiceEndpoints){
+                this.vpc.addGatewayEndpoint('S3Endpoint', {
+                    service: GatewayVpcEndpointAwsService.S3
+                })
+        
+                this.vpc.addInterfaceEndpoint('ECRDockerEndpoint', {
+                    service: InterfaceVpcEndpointAwsService.ECR_DOCKER
+                })
+        
+                this.vpc.addInterfaceEndpoint('ECREndpoint', {
+                    service: InterfaceVpcEndpointAwsService.ECR
+                })
+        
+                this.vpc.addInterfaceEndpoint('SecretsManagerEndpoint', {
+                    service: InterfaceVpcEndpointAwsService.SECRETS_MANAGER
+                })
+        
+                this.vpc.addInterfaceEndpoint('CloudWatchEndpoint', {
+                    service: InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS
+                })
+            }
 
-            // auto dns resolution for endpoint stuff
-            enableDnsHostnames: true,
-            enableDnsSupport: true
-        })
-
-        if(configuration.vpcSettings.enableServiceEndpoints){
-            this.vpc.addGatewayEndpoint('S3Endpoint', {
-                service: GatewayVpcEndpointAwsService.S3
-            })
-    
-            this.vpc.addInterfaceEndpoint('ECRDockerEndpoint', {
-                service: InterfaceVpcEndpointAwsService.ECR_DOCKER
-            })
-    
-            this.vpc.addInterfaceEndpoint('ECREndpoint', {
-                service: InterfaceVpcEndpointAwsService.ECR
-            })
-    
-            this.vpc.addInterfaceEndpoint('SecretsManagerEndpoint', {
-                service: InterfaceVpcEndpointAwsService.SECRETS_MANAGER
-            })
-    
-            this.vpc.addInterfaceEndpoint('CloudWatchEndpoint', {
-                service: InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS
+            this.securityGroup = new SecurityGroup(this, 'VPCSecurityGroup', {
+                vpc: this.vpc,
+                description: (prefix + ' VPC Security Group').trim(),
+                allowAllOutbound: true
             })
         }
-
-        this.securityGroup = new SecurityGroup(this, 'VPCSecurityGroup', {
-            vpc: this.vpc,
-            description: (prefix + ' VPC Security Group').trim(),
-            allowAllOutbound: true
-        })
+        
 
         // ECS VPC SG
         new StringParameter(this, 'VPCSecurityGroupID', {

@@ -1,4 +1,5 @@
 import { Duration } from "aws-cdk-lib"
+import { SslPolicy } from "aws-cdk-lib/aws-elasticloadbalancingv2"
 import { AbstractConfiguration } from "./abstract-configuration"
 import { Settings } from "./settings"
 
@@ -23,6 +24,15 @@ export class ConfigurationDefaults extends AbstractConfiguration {
             vpcCIDRRange: '20.0.0.0/16',
             numberOfNatGateways: 1,
             enableServiceEndpoints: true
+        },
+
+        ecsSettings: {
+
+        },
+
+        albSettings: {
+            sslPolicy: SslPolicy.RECOMMENDED
+
         }
         
     }

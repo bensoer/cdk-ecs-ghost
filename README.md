@@ -1,6 +1,8 @@
 # cdk-ecs-ghost
 Create a Ghost Blog with AWS ECS. Deployed using the AWS CDK. This project is a fully self contained deployment of Ghost (https://ghost.org/)
 
+Currently the project is setup to run the latest Ghosts LTS - v4.
+
 # Prerequisites
 
 ## AWS CLI & Account
@@ -27,7 +29,7 @@ npm install -g aws-cdk
 5. Wait for the CDK to complete deploying the project to your account
 
 By default cdk-ecs-ghost sets up all DNS with AWS Route53. You will need to login to your account and find your Nameservers
-and point whomever owns your domain to Route53
+and point whomever owns your domain to Route53. See https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/MigratingDNS.html for details
 
 # Features
 - Simplified deployment using AWS CDK. Fill in the required minimum configuration and deploy!

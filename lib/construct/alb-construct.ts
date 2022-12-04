@@ -15,7 +15,7 @@ export interface ALBConstructProps {
 
 export class ALBConstruct extends Construct {
 
-    public readonly alb: ApplicationLoadBalancer
+    public readonly alb: IApplicationLoadBalancer
     public readonly defaultTargetGroup: ApplicationTargetGroup
     public readonly defaultSecureListener: ApplicationListener
 
@@ -25,22 +25,29 @@ export class ALBConstruct extends Construct {
         const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
         const prefix = configuration.prefixName
 
-        this.alb = new ApplicationLoadBalancer(this, 'ApplicationLoadBalancer', {
-            loadBalancerName: props.loadBalancerName,
-            vpc: props.vpc,
-            internetFacing: true,
-            securityGroup: props.vpcSecurityGroup,
-        })
-      
-        this.alb.setAttribute('routing.http.preserve_host_header.enabled', 'true') // Enable forwarding host header
-        this.alb.setAttribute('routing.http.xff_client_port.enabled', 'true') // Enabled x-forwarded-for header
-    
-        this.alb.addRedirect({
-            sourceProtocol: ApplicationProtocol.HTTP,
-            sourcePort: 80,
-            targetProtocol: ApplicationProtocol.HTTPS,
-            targetPort: 443
-        })
+        if(configuration.albSettings.importSettings){
+            this.alb = ApplicationLoadBalancer.fromLookup(this, 'ApplicationLoadBalancer-Lookup', {
+                loadBalancerArn: configuration.albSettings.importSettings.arn
+            })
+        }else{
+            const alb = new ApplicationLoadBalancer(this, 'ApplicationLoadBalancer', {
+                loadBalancerName: props.loadBalancerName,
+                vpc: props.vpc,
+                internetFacing: true,
+                securityGroup: props.vpcSecurityGroup,
+            })
+          
+            alb.setAttribute('routing.http.preserve_host_header.enabled', 'true') // Enable forwarding host header
+            alb.setAttribute('routing.http.xff_client_port.enabled', 'true') // Enabled x-forwarded-for header
+        
+            alb.addRedirect({
+                sourceProtocol: ApplicationProtocol.HTTP,
+                sourcePort: 80,
+                targetProtocol: ApplicationProtocol.HTTPS,
+                targetPort: 443
+            })
+            this.alb = alb
+        }
 
         this.defaultTargetGroup = new ApplicationTargetGroup(this, 'DefaultApplicationTargetGroup', {
             targetType: TargetType.IP,
@@ -53,12 +60,14 @@ export class ALBConstruct extends Construct {
             loadBalancer: this.alb,
             port: 443,
             protocol: ApplicationProtocol.HTTPS,
-            sslPolicy: SslPolicy.RECOMMENDED,
+            sslPolicy: configuration.albSettings.sslPolicy,
             defaultTargetGroups: [
               this.defaultTargetGroup
             ],
             certificates: props.certificates,
         })
+
+        
 
         // ECS Load Balancer Parameters
         new StringParameter(this, 'ApplicationLoadBalancerARN', {
