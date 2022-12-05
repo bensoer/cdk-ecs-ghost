@@ -8,8 +8,7 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk",
-    "generate-docs": "tsdoc"
+    "cdk": "cdk"
   },
   "devDependencies": {
     "@types/jest": "^27.5.2",

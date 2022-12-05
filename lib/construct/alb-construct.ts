@@ -1,4 +1,4 @@
-import { CfnOutput } from "aws-cdk-lib";
+import { CfnOutput, Stack } from "aws-cdk-lib";
 import { ICertificate } from "aws-cdk-lib/aws-certificatemanager";
 import { ISecurityGroup, IVpc } from "aws-cdk-lib/aws-ec2";
 import { ApplicationListener, ApplicationLoadBalancer, ApplicationProtocol, ApplicationProtocolVersion, ApplicationTargetGroup, IApplicationLoadBalancer, SslPolicy, TargetType } from "aws-cdk-lib/aws-elasticloadbalancingv2";
@@ -22,7 +22,7 @@ export class ALBConstruct extends Construct {
     constructor(scope: Construct, id:string, props: ALBConstructProps){
         super(scope, id)
 
-        const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
+        const configuration = ConfigurationSingletonFactory.getInstance(Stack.of(this).account, Stack.of(this).region).getSettings()
         const prefix = configuration.prefixName
 
         if(configuration.albSettings.importSettings){

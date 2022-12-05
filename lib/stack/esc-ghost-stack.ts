@@ -10,7 +10,7 @@ import { RDSConstruct } from '../construct/rds-construct';
 import *  as ecs from 'aws-cdk-lib/aws-ecs';
 import { Route53Construct } from '../construct/route53-construct';
 import { ALBConstruct } from '../construct/alb-construct';
-import { Duration, Tags } from 'aws-cdk-lib';
+import { Duration, Stack, Tags } from 'aws-cdk-lib';
 import { ApplicationProtocol, ApplicationProtocolVersion, ApplicationTargetGroup, ListenerAction, ListenerCondition, TargetType } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { ACMConstruct } from '../construct/acm-construct';
 import { ConfigurationSingletonFactory } from '../conf/configuration-singleton-factory';
@@ -19,7 +19,7 @@ export class ECSGhostStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
-        const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
+        const configuration = ConfigurationSingletonFactory.getInstance(Stack.of(this).account, Stack.of(this).region).getSettings()
         const prefix = configuration.prefixName
 
         // Create the VPC where everything will be located in

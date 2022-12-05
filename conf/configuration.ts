@@ -1,9 +1,9 @@
-import { ConfigurationDefaults } from "../lib/conf/configuration-defaults"
+import { Defaults } from '../lib/conf/defaults'
 import { Settings } from "../lib/conf/settings"
 
 
 
-export class Configuration extends ConfigurationDefaults {
+export class Configuration extends Defaults {
 
     public getSettings(): Settings {
         const defaults = super.getSettings()

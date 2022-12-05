@@ -1,4 +1,4 @@
-import { CfnOutput } from "aws-cdk-lib";
+import { CfnOutput, Stack } from "aws-cdk-lib";
 import { InstanceClass, InstanceSize, InstanceType, IVpc, Peer, Port, SecurityGroup } from "aws-cdk-lib/aws-ec2";
 import { Credentials, DatabaseInstance, DatabaseInstanceEngine } from "aws-cdk-lib/aws-rds";
 import { ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
@@ -18,7 +18,7 @@ export class RDSConstruct extends Construct {
     constructor(scope: Construct, id: string, props: RDSConstructProps){
         super(scope, id);
 
-        const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
+        const configuration = ConfigurationSingletonFactory.getInstance(Stack.of(this).account, Stack.of(this).region).getSettings()
         const prefix = configuration.prefixName
         
         this.securityGroup = new SecurityGroup(this, 'MySQLSecurityGroup', {

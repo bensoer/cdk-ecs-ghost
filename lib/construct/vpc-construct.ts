@@ -1,4 +1,4 @@
-import { CfnOutput } from "aws-cdk-lib";
+import { CfnOutput, Stack } from "aws-cdk-lib";
 import { GatewayVpcEndpointAwsService, InterfaceVpcEndpointAwsService, ISecurityGroup, IVpc, SecurityGroup, Vpc } from "aws-cdk-lib/aws-ec2";
 import { ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
 import { Construct } from "constructs";
@@ -14,7 +14,7 @@ export class VPCConstruct extends Construct {
     constructor(scope: Construct, id: string){
         super(scope, id)
 
-        const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
+        const configuration = ConfigurationSingletonFactory.getInstance(Stack.of(this).account, Stack.of(this).region).getSettings()
         const prefix = configuration.prefixName
 
         // Check whether importSettings were provided or if we are making our own

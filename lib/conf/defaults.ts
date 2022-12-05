@@ -1,9 +1,9 @@
 import { Duration } from "aws-cdk-lib"
 import { SslPolicy } from "aws-cdk-lib/aws-elasticloadbalancingv2"
-import { AbstractConfiguration } from "./abstract-configuration"
+import { ISettings } from "./isettings"
 import { Settings } from "./settings"
 
-export class ConfigurationDefaults extends AbstractConfiguration {
+export class Defaults implements ISettings<Settings> {
 
     private readonly settings:Settings = {
         domainName: 'localhost',

@@ -1,4 +1,4 @@
-import { CfnOutput } from "aws-cdk-lib";
+import { CfnOutput, Stack } from "aws-cdk-lib";
 import { IVpc, SecurityGroup, Vpc } from "aws-cdk-lib/aws-ec2";
 import { Cluster, ICluster } from "aws-cdk-lib/aws-ecs";
 import { ParameterTier, StringParameter } from "aws-cdk-lib/aws-ssm";
@@ -17,7 +17,7 @@ export class ECSConstruct extends Construct {
     constructor(scope: Construct, id: string, props: ECSConstructProps){
         super(scope, id)
 
-        const configuration = ConfigurationSingletonFactory.getInstance().getSettings()
+        const configuration = ConfigurationSingletonFactory.getInstance(Stack.of(this).account, Stack.of(this).region).getSettings()
         const prefix = configuration.prefixName
 
         if(configuration.ecsSettings.importSettings){
